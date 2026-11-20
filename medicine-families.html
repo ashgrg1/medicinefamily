@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medicine Families</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one small family on screen at a time (meet it, flip its cards, pass a quick check); a map of all families shows what is done. */
+:root{
+  --bg:#f1f6f5; --panel:#ffffff; --ink:#12302e; --muted:#4f6e6b; --line:#d2e0dd;
+  --teal:#0b7a75; --amber:#a86200; --amber-bg:#fdf1dc; --soft:#e4f0ee; --ok:#1f8a54; --bad:#c2402f;
+  --g0:#d6455a; --g1:#d98a12; --g2:#9a6cc4; --g3:#b3573f; --g4:#2f9562; --g5:#3f86cc; --g6:#c9662e; --g7:#c95a92;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif; --text:"Atkinson Hyperlegible",Verdana,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1a1a; --panel:#142525; --ink:#e4f0ee; --muted:#93b0ac; --line:#27403e;
+  --teal:#45c4bb; --amber:#f2b04a; --amber-bg:#33270f; --soft:#0f2020; --ok:#4cc98a; --bad:#f07c6c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1a1a; --panel:#142525; --ink:#e4f0ee; --muted:#93b0ac; --line:#27403e;
+  --teal:#45c4bb; --amber:#f2b04a; --amber-bg:#33270f; --soft:#0f2020; --ok:#4cc98a; --bad:#f07c6c; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 var(--text)}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.7rem,4vw,2.3rem);font-weight:800}
+h2{font-size:1.4rem}
+h3{font:700 .8rem var(--text);letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between;margin-bottom:16px}
+header p{margin:6px 0 0;color:var(--muted);max-width:58ch}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1.5px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:999px;font-weight:700}
+.tabs button[aria-selected="true"]{background:var(--teal);border-color:var(--teal);color:var(--panel)}
+section[hidden]{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stack{display:grid;gap:16px}
+.primary{background:var(--teal);color:var(--panel);border:0;border-radius:10px;padding:10px 20px;font-weight:700}
+.ghost{border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.muted{color:var(--muted)} .small{font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.stats div{background:var(--soft);border-radius:12px;padding:12px}
+.stats b{font:800 1.8rem var(--display);display:block;font-variant-numeric:tabular-nums}
+.bar{height:12px;border-radius:6px;background:var(--soft);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:6px}
+.next{border-left:8px solid var(--gc,var(--teal))}
+.clue{font:800 clamp(2rem,7vw,3.2rem)/1 var(--display);color:var(--gc,var(--teal))}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--gc);flex:none}
+.grp{margin-top:18px}
+.grp h2{display:flex;align-items:center;gap:8px;font-size:1.1rem}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px}
+.tile{border:1.5px solid var(--line);border-top:5px solid var(--gc);background:var(--panel);border-radius:10px;padding:9px 10px;text-align:left;min-height:74px}
+.tile b{display:block;font-family:var(--display);font-size:1.05rem}
+.tile span{font-size:.85rem;color:var(--muted)}
+.tile.done{background:var(--soft)} .tile.done b::after{content:" \2713";color:var(--ok)}
+.say3{display:grid;gap:10px;margin-top:12px}
+.say3 p{margin:0;padding:10px 12px;border-radius:10px;background:var(--soft)}
+.say3 .hook{background:var(--amber-bg)} .say3 .hook b{color:var(--amber)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}
+.fc{display:grid;gap:6px}
+.flip{border:2px solid var(--line);border-radius:12px;background:var(--panel);min-height:112px;padding:10px;text-align:center;display:grid;place-content:center;gap:2px}
+.flip small{color:var(--muted);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase}
+.flip b{font-size:1.15rem;overflow-wrap:anywhere}
+.flip .b{display:none} .flip.on .f{display:none} .flip.on .b{display:grid;gap:2px}
+.flip .f{display:grid;gap:2px}
+.flip.on{border-color:var(--gc);background:var(--soft)}
+mark{background:var(--amber-bg);color:var(--amber);border-radius:4px;padding:0 2px}
+@media (prefers-reduced-motion:no-preference){.flip.pop{animation:pop .25s ease-out}}
+@keyframes pop{from{transform:scaleX(.2)}to{transform:scaleX(1)}}
+.say{border:0;background:transparent;color:var(--teal);font-size:.85rem;text-decoration:underline;padding:2px}
+.opts{display:grid;gap:8px;margin:12px 0}
+.opts button{border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 12px;text-align:left}
+.opts button.right{border-color:var(--ok);box-shadow:inset 0 0 0 1px var(--ok)}
+.opts button.wrong{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.fb{margin:0 0 12px;padding:10px 12px;border-left:5px solid var(--ok);background:var(--soft);border-radius:0 8px 8px 0}
+.fb.no{border-color:var(--bad)}
+.fb b{display:block}
+.search{width:100%;max-width:360px;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+.scroll{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.8rem;color:var(--muted);white-space:nowrap}
+td.fam{border-left:5px solid var(--gc);font-weight:700}
+.note{color:var(--muted);font-size:.85rem;margin-top:18px}
+.sync{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:.85rem;color:var(--muted)}
+.sync::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.sync[data-s="ok"]::before{background:var(--ok)} .sync[data-s="off"]::before{background:var(--amber)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.gbars{display:grid;gap:10px;margin-top:10px}
+.gbar{display:grid;grid-template-columns:minmax(110px,40%) 1fr auto;gap:10px;align-items:center;font-size:.92rem}
+.gbar .track{height:14px;border-radius:7px;background:var(--soft);overflow:hidden}
+.gbar .track i{display:block;height:100%;background:var(--gc);border-radius:7px}
+.gbar b{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.chart{position:relative;margin-top:10px}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{font:11px var(--text);fill:var(--muted)}
+.chart .v{fill:var(--ink);font-weight:700}
+.ctip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:.85rem;box-shadow:0 4px 14px rgb(0 0 0 / .15);white-space:nowrap}
+.trick{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
+.trick span{border:1.5px solid var(--line);border-left:5px solid var(--gc);border-radius:8px;padding:3px 9px;font-size:.9rem;background:var(--panel)}
+.big{font:800 2.6rem/1 var(--display);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Medicine Families</h1>
+    <p>Medications are 35% of the PTCE. Learn them the easy way: one small family at a time, three to five medicines each.</p>
+    <span class="sync" id="sync" data-s="busy" role="status">Connecting</span>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="today" aria-selected="true">Dashboard</button>
+    <button role="tab" data-tab="families" aria-selected="false">All families</button>
+    <button role="tab" data-tab="review" aria-selected="false">Review quiz</button>
+    <button role="tab" data-tab="list" aria-selected="false">Full list</button>
+  </div>
+</header>
+
+<section id="today" class="stack"></section>
+<section id="families" hidden></section>
+<section id="review" hidden><div class="card" id="reviewbox"></div></section>
+<section id="list" hidden>
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><h2>Every medicine, grouped by family</h2>
+    <input class="search" id="search" type="search" placeholder="Search a name, brand or family" aria-label="Search medicines"></div>
+    <div class="scroll"><table><thead><tr><th>Family</th><th>Name clue</th><th>Generic</th><th>Brand</th><th>What the family does</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </div>
+</section>
+<p class="note">Study aid written from general pharmacy knowledge. Brand names and details can change, so confirm against your PTCE course material. Progress is saved in this browser. To move it to another device, use Back up progress on the Dashboard.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const G=['Heart and blood pressure','Blood sugar','Brain and mood','Pain','Germ fighters','Breathing and allergy','Tummy','Hormones and more'];
+/* [group, name clue, family, what it does, memory picture, watch out, [[generic, brand]...]] */
+const RAW=[
+[0,'-pril','ACE inhibitors','Relax the blood vessels so blood pressure comes down.','PRIL sounds like APRIL. A soft April breeze relaxes the garden hose.','Can cause a dry cough.',[['lisinopril','Zestril, Prinivil'],['enalapril','Vasotec'],['ramipril','Altace'],['benazepril','Lotensin']]],
+[0,'-sartan','ARBs','Relax the blood vessels, like the -pril family, but without the cough.','SARTAN the Spartan guards the hose so nothing can squeeze it.','Often the swap when a -pril causes a cough.',[['losartan','Cozaar'],['valsartan','Diovan'],['olmesartan','Benicar'],['irbesartan','Avapro']]],
+[0,'-olol','Beta blockers','Slow down a heart that is beating too fast or too hard.','The heart reads "o-LOL", laughs, and relaxes.','They slow the pulse.',[['metoprolol','Lopressor, Toprol XL'],['atenolol','Tenormin'],['carvedilol','Coreg'],['propranolol','Inderal']]],
+[0,'-dipine','Calcium channel blockers','Relax the walls of the blood vessels.','DIP-ine: blood pressure takes a DIP.','Diltiazem and verapamil belong here too, without the ending.',[['amlodipine','Norvasc'],['nifedipine','Procardia'],['diltiazem','Cardizem'],['verapamil','Calan']]],
+[0,'—','Water pills (diuretics)','Make the kidneys send out extra water and salt.','LASIX: it LAsts SIX hours, and you visit the bathroom a lot.','Furosemide and hydrochlorothiazide can lower potassium. Spironolactone keeps it.',[['furosemide','Lasix'],['hydrochlorothiazide','Microzide'],['spironolactone','Aldactone'],['bumetanide','Bumex']]],
+[0,'-statin','Statins','Lower cholesterol, the fat that clogs blood vessels.','STATIN tells cholesterol to STAy out.','Nystatin ends the same way but fights fungus.',[['atorvastatin','Lipitor'],['simvastatin','Zocor'],['rosuvastatin','Crestor'],['pravastatin','Pravachol']]],
+[0,'-xaban','Blood thinners','Stop dangerous clots from forming in the blood.','XA-BAN: these BAN clotting factor Xa.','Warfarin is high-alert and has many food and drug interactions. Enoxaparin is an injection.',[['warfarin','Coumadin, Jantoven'],['apixaban','Eliquis'],['rivaroxaban','Xarelto'],['clopidogrel','Plavix'],['enoxaparin','Lovenox']]],
+[0,'—','Heart helpers','Help a weak or hurting heart.','NITRO opens the vessels fast, like opening a jammed door.','Nitroglycerin tablets go under the tongue and stay in their original glass bottle.',[['digoxin','Lanoxin'],['nitroglycerin','Nitrostat'],['isosorbide mononitrate','Imdur']]],
+[1,'gli-','Metformin and the gli- tablets','Lower blood sugar in type 2 diabetes.','GLI sounds like GLUcose. The gli- tablets squeeze more insulin out of the pancreas.','Metformin is usually the first diabetes medicine.',[['metformin','Glucophage'],['glipizide','Glucotrol'],['glimepiride','Amaryl'],['glyburide','Glynase']]],
+[1,'-gliptin','DPP-4 inhibitors','Help the body’s own insulin work longer after meals.','GLIP-tin gives your insulin a better GRIP.','',[['sitagliptin','Januvia'],['linagliptin','Tradjenta'],['saxagliptin','Onglyza']]],
+[1,'-gliflozin','SGLT2 inhibitors','Send extra sugar out of the body in the urine.','FLOZIN: the sugar FLOWS out.','',[['empagliflozin','Jardiance'],['dapagliflozin','Farxiga'],['canagliflozin','Invokana']]],
+[1,'-glutide','GLP-1 shots','Lower sugar after meals and make you feel full.','GLU-TIDE: a tide that washes extra GLUcose away.','These are injections, kept in the refrigerator before first use.',[['semaglutide','Ozempic'],['liraglutide','Victoza'],['dulaglutide','Trulicity']]],
+[1,'insulin','Insulins','Replace the insulin the body is missing.','A LOG rolls fast: HumaLOG and NovoLOG work fast at mealtime. LANtus is the LONG one.','High-alert. Measured in units. Unopened insulin lives in the refrigerator.',[['insulin lispro','Humalog'],['insulin aspart','Novolog'],['insulin glargine','Lantus'],['insulin detemir','Levemir'],['regular insulin','Humulin R, Novolin R']]],
+[2,'SSRI','SSRI antidepressants','Lift low mood by keeping more serotonin in the brain.','SSRI: Sad Spirits Rise Indeed.','They take a few weeks to work.',[['sertraline','Zoloft'],['fluoxetine','Prozac'],['escitalopram','Lexapro'],['citalopram','Celexa'],['paroxetine','Paxil']]],
+[2,'—','Other antidepressants','Lift mood in different ways from the SSRIs.','CYMBALta crashes sadness away like CYMBALS.','Bupropion is also used to help people stop smoking.',[['venlafaxine','Effexor XR'],['duloxetine','Cymbalta'],['bupropion','Wellbutrin'],['trazodone','Desyrel']]],
+[2,'-pam / -lam','Benzodiazepines','Calm strong anxiety and stop seizures.','PAM and LAM are the calm twins.','Schedule IV controlled substances.',[['alprazolam','Xanax'],['lorazepam','Ativan'],['clonazepam','Klonopin'],['diazepam','Valium']]],
+[2,'—','Sleep medicines','Help a person fall asleep.','AMBIEN sets a sleepy AMBIENce.','Schedule IV controlled substances.',[['zolpidem','Ambien'],['eszopiclone','Lunesta'],['temazepam','Restoril']]],
+[2,'—','ADHD stimulants','Help the brain focus and stay on task.','ConCERTa helps you conCEntRaTe.','Schedule II controlled substances.',[['methylphenidate','Ritalin, Concerta'],['amphetamine/dextroamphetamine','Adderall'],['lisdexamfetamine','Vyvanse']]],
+[2,'—','Seizure and nerve medicines','Quiet nerves that fire too much.','NEURONtin calms the NEURONS.','Pregabalin is a Schedule V controlled substance.',[['gabapentin','Neurontin'],['levetiracetam','Keppra'],['lamotrigine','Lamictal'],['topiramate','Topamax'],['pregabalin','Lyrica']]],
+[2,'-apine / -idone','Antipsychotics','Steady thinking and mood in conditions like schizophrenia and bipolar disorder.','SeroQUEL QUELLs racing thoughts.','Aripiprazole ends in -prazole but is not a stomach medicine.',[['quetiapine','Seroquel'],['olanzapine','Zyprexa'],['risperidone','Risperdal'],['aripiprazole','Abilify']]],
+[3,'-codone','Opioid pain medicines','Block strong pain signals.','CODONE: the pain CODE is switched off.','Schedule II, except tramadol, which is Schedule IV.',[['hydrocodone/acetaminophen','Norco'],['oxycodone','OxyContin'],['oxycodone/acetaminophen','Percocet'],['morphine','MS Contin'],['tramadol','Ultram']]],
+[3,'—','Everyday pain relievers','Ease pain, fever and swelling.','MOBIC keeps stiff joints MOBile.','The first four are NSAIDs. Acetaminophen is not an NSAID, and its adult limit is 4 g a day.',[['ibuprofen','Motrin, Advil'],['naproxen','Aleve, Naprosyn'],['meloxicam','Mobic'],['celecoxib','Celebrex'],['acetaminophen','Tylenol']]],
+[3,'—','Muscle relaxers','Loosen tight, cramping muscles.','FLEXeril lets you FLEX again.','They can cause sleepiness.',[['cyclobenzaprine','Flexeril'],['methocarbamol','Robaxin'],['tizanidine','Zanaflex'],['baclofen','Lioresal']]],
+[4,'-cillin','Penicillins','Kill bacteria in common infections like strep throat and ear infections.','CILLIN is the KILLIN’ family: it kills germs.','Always check for a penicillin allergy.',[['amoxicillin','Amoxil'],['amoxicillin/clavulanate','Augmentin'],['penicillin V','Penicillin VK']]],
+[4,'cef- / ceph-','Cephalosporins','Kill bacteria. They are cousins of the penicillins.','The CHEF (cef) cooks the germs.','',[['cephalexin','Keflex'],['cefdinir','Omnicef'],['ceftriaxone','Rocephin'],['cefuroxime','Ceftin']]],
+[4,'-thromycin','Macrolides','Kill bacteria, often in chest and throat infections.','The Z-Pak is a short five-day pack that THROws the germs out.','',[['azithromycin','Zithromax, Z-Pak'],['clarithromycin','Biaxin'],['erythromycin','Ery-Tab']]],
+[4,'-floxacin','Fluoroquinolones','Kill bacteria in tougher infections.','FLOX-acin: a FLOCK of birds pecks the germs away.','',[['ciprofloxacin','Cipro'],['levofloxacin','Levaquin'],['moxifloxacin','Avelox']]],
+[4,'-cycline','Tetracyclines','Kill bacteria. Often used for acne and tick bites.','CYCLINE rides over the germs on a biCYCLE.','Keep away from milk and antacids. Avoid strong sun.',[['doxycycline','Vibramycin'],['minocycline','Minocin'],['tetracycline','Sumycin']]],
+[4,'—','Other germ fighters','Kill bacteria in special places like the bladder, skin and gut.','BACtrim trims the BACteria.','No alcohol with metronidazole.',[['sulfamethoxazole/trimethoprim','Bactrim'],['clindamycin','Cleocin'],['metronidazole','Flagyl'],['nitrofurantoin','Macrobid']]],
+[4,'-vir','Antivirals','Fight viruses like flu, cold sores and shingles.','VIR is for VIRus.','',[['acyclovir','Zovirax'],['valacyclovir','Valtrex'],['oseltamivir','Tamiflu']]],
+[4,'-azole','Antifungals','Fight fungus and yeast infections.','Fungus in your shoe? Call the AZOLE patrol.','Nystatin fights fungus too. It is not a statin.',[['fluconazole','Diflucan'],['ketoconazole','Nizoral'],['clotrimazole','Lotrimin'],['nystatin','Nystop']]],
+[5,'-terol','Airway openers','Open tight airways so air can get through.','Albuterol starts with A, for Asthma Attack. It is the rescue.','Albuterol is the rescue inhaler. Salmeterol is long-acting and not for rescue.',[['albuterol','ProAir, Ventolin'],['levalbuterol','Xopenex'],['salmeterol','Serevent'],['tiotropium','Spiriva']]],
+[5,'—','Controller inhalers','Calm swelling inside the airways, used every day.','ADVAIR gives you an ADVantage with AIR.','Rinse the mouth after a steroid inhaler. Montelukast is a tablet.',[['fluticasone','Flovent'],['budesonide','Pulmicort'],['fluticasone/salmeterol','Advair'],['budesonide/formoterol','Symbicort'],['montelukast','Singulair']]],
+[5,'—','Allergy medicines','Stop sneezing, itching and a runny nose.','CLARITin gives you CLARITY from allergies.','Diphenhydramine causes sleepiness.',[['cetirizine','Zyrtec'],['loratadine','Claritin'],['fexofenadine','Allegra'],['diphenhydramine','Benadryl']]],
+[5,'-sone / -lone','Steroids','Calm strong swelling and allergic reactions.','SONE puts swelling in the calm ZONE.','',[['prednisone','Deltasone'],['methylprednisolone','Medrol'],['prednisolone','Orapred'],['dexamethasone','Decadron']]],
+[6,'-prazole','Proton pump inhibitors','Turn off the pumps that make stomach acid.','PRAZOLE puts out the fire in the acid HOLE.','Best taken 30 to 60 minutes before a meal.',[['omeprazole','Prilosec'],['pantoprazole','Protonix'],['esomeprazole','Nexium'],['lansoprazole','Prevacid']]],
+[6,'-tidine','H2 blockers','Turn stomach acid down.','TIDINE TIDIES up the acid.','',[['famotidine','Pepcid'],['cimetidine','Tagamet']]],
+[6,'—','Nausea and bowel helpers','Settle an upset stomach, or get the bowels moving or slowing.','ZOFRAN: the nausea is GONE-fran.','Ondansetron and promethazine are for nausea. Loperamide slows diarrhea. Docusate and polyethylene glycol ease constipation.',[['ondansetron','Zofran'],['promethazine','Phenergan'],['loperamide','Imodium'],['docusate','Colace'],['polyethylene glycol 3350','MiraLAX']]],
+[7,'—','Thyroid medicines','Set the body’s speed right when the thyroid is too slow or too fast.','SYNTHroid is SYNTHetic thyroid.','Levothyroxine: morning, empty stomach. Doses are in mcg.',[['levothyroxine','Synthroid, Levoxyl'],['liothyronine','Cytomel'],['methimazole','Tapazole']]],
+[7,'-dronate','Bone builders','Keep bones strong in osteoporosis.','A DRONe delivers bricks to the bones.','Take with a full glass of water and stay upright for 30 minutes.',[['alendronate','Fosamax'],['risedronate','Actonel'],['ibandronate','Boniva']]],
+[7,'-osin / -afil','Men’s health','Help urine flow past a large prostate, or improve blood flow.','FLOMAX gives MAXimum FLOW.','',[['tamsulosin','Flomax'],['finasteride','Proscar'],['sildenafil','Viagra'],['tadalafil','Cialis']]],
+[7,'—','Hormone medicines','Replace or balance female hormones.','ESTRAce brings back ESTRogen.','',[['estradiol','Estrace'],['conjugated estrogens','Premarin'],['medroxyprogesterone','Provera']]],
+[7,'—','More must-know medicines','A few common ones that do not fit a family.','ZYLOprim sends gout pain to ZERO.','Allopurinol is for gout, potassium chloride replaces potassium, oxybutynin calms the bladder, latanoprost is an eye drop for glaucoma.',[['allopurinol','Zyloprim'],['potassium chloride','Klor-Con'],['oxybutynin','Ditropan XL'],['latanoprost','Xalatan']]]
+];
+const F=RAW.map((r,i)=>({i,g:r[0],clue:r[1],name:r[2],does:r[3],hook:r[4],watch:r[5],drugs:r[6].map(d=>({g:d[0],b:d[1],b1:d[1].split(', ')[0],f:i}))}));
+const D=F.flatMap(f=>f.drugs);
+
+/* ---------- saved progress ---------- */
+/* Progress lives in this browser and, when signed in, in the viewer's own private record online, so it follows them between devices. */
+let S={done:{},tricky:{},streak:0,last:'',hist:{},at:0};
+try{Object.assign(S,JSON.parse(localStorage.getItem('medfam-v1')||'{}'))}catch(e){}
+if(!S.hist)S.hist={};
+let REF=null,writing=false,queued=false;
+const setSync=(t,s)=>{const p=$('#sync');if(p){p.textContent=t;p.dataset.s=s}};
+const cache=()=>{try{localStorage.setItem('medfam-v1',JSON.stringify(S))}catch(e){}};
+const canon=o=>Array.isArray(o)?o.map(canon):o&&typeof o==='object'?Object.keys(o).sort().reduce((r,k)=>(r[k]=canon(o[k]),r),{}):o;
+const same=(a,b)=>JSON.stringify(canon(a))===JSON.stringify(canon(b));
+const dayKey=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function trimHist(h){const keys=Object.keys(h).sort();keys.slice(0,Math.max(0,keys.length-120)).forEach(k=>delete h[k]);return h}
+function merge(a,b){const newer=(b.at||0)>(a.at||0)?b:a,hist={...(a.hist||{})};
+  for(const [d,v] of Object.entries(b.hist||{})){const x=hist[d];hist[d]=x?{q:Math.max(x.q||0,v.q||0),t:Math.max(x.t||0,v.t||0),f:Math.max(x.f||0,v.f||0)}:{...v}}
+  return {done:{...(a.done||{}),...(b.done||{})},tricky:{...(newer.tricky||{})},streak:newer.streak||0,last:newer.last||'',hist:trimHist(hist),at:Math.max(a.at||0,b.at||0)}}
+async function push(){if(!REF)return;if(writing){queued=true;return}writing=true;setSync('Saving','busy');
+  try{await REF.set(JSON.parse(JSON.stringify(S)));setSync('Progress saved to your account','ok')}
+  catch(e){setSync('Progress saved on this device only','off');if(e&&(e.code==='invalid_argument'||e.code==='revoked'||e.code==='quota_exceeded'))REF=null}
+  writing=false;if(queued){queued=false;push()}}
+const save=()=>{S.at=Date.now();cache();push()};
+function logDay(q,t,f){const k=dayKey(),h=S.hist[k]||{q:0,t:0,f:0};h.q+=q;h.t+=t;h.f+=f;S.hist[k]=h;trimHist(S.hist)}
+function touchDay(){const t=new Date().toDateString();if(S.last===t)return;const y=new Date(Date.now()-864e5).toDateString();S.streak=S.last===y?S.streak+1:1;S.last=t;save()}
+let view='today',inFamily=false;
+function refresh(){if(view==='today')drawToday();else if(view==='families'&&!inFamily)drawMap();else if(view==='review'&&!$('#reviewbox .opts'))drawReview()}
+(async()=>{
+  if(!window.claude||!claude.use){setSync('Progress saved in this browser','ok');return}
+  const timer=setTimeout(()=>setSync('Online saving can’t be reached yet. Progress is saved on this device.','off'),10000);
+  try{
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    const id=user?await user.id():null;
+    if(!db||!id){clearTimeout(timer);setSync('Sign in to Claude to save progress to your account','off');return}
+    REF=db.doc('data/users/'+id+'/medfam');
+    REF.onSnapshot(snap=>{
+      if(snap.metadata.hasPendingWrites)return;
+      if(!snap.metadata.fromCache)clearTimeout(timer);
+      const r=snap.exists?JSON.parse(JSON.stringify(snap.data())):null;
+      if(r){const m=merge(S,r);const changed=!same(m,S);S=m;cache();if(changed)refresh();
+        if(!same(m,r)&&!snap.metadata.fromCache)push();else if(!snap.metadata.fromCache)setSync('Progress saved to your account','ok')}
+      else if(!snap.metadata.fromCache){if(S.at||Object.keys(S.done).length)push();else setSync('Progress saved to your account','ok')}
+    },()=>{clearTimeout(timer);REF=null;setSync('Progress saved on this device only','off')});
+  }catch(e){clearTimeout(timer);REF=null;setSync('Progress saved on this device only','off')}
+})();
+
+/* ---------- helpers ---------- */
+const shuffle=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const pick=(arr,n,not)=>shuffle(arr.filter(x=>!not.includes(x))).slice(0,n);
+function hl(name,clue){const parts=clue.split(' / ').map(c=>c.replace(/-/g,'')).filter(c=>c&&c!=='—');
+  for(const p of parts){const k=name.toLowerCase().indexOf(p.toLowerCase());if(k>=0)return name.slice(0,k)+'<mark>'+name.slice(k,k+p.length)+'</mark>'+name.slice(k+p.length)}return name}
+function speak(text,btn){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=.85;speechSynthesis.speak(u)}catch(e){if(btn)btn.textContent='Voice not available'}}
+function makeQ(d,type){const f=F[d.f];let q,a,opts;
+  if(type==='b2g'){q=`What is the generic name of ${d.b1}?`;a=d.g;opts=pick([...new Set(D.map(x=>x.g))],3,[a])}
+  else if(type==='g2b'){q=`Which is a brand name for ${d.g}?`;a=d.b1;opts=pick([...new Set(D.map(x=>x.b1))],3,[a])}
+  else if(type==='fam'){q=`${d.g} (${d.b1}) belongs to which family?`;a=f.name;opts=pick(F.map(x=>x.name),3,[a])}
+  else{q=`What does the ${f.name} family do?`;a=f.does;opts=pick(F.filter(x=>x.g!==f.g).map(x=>x.does),3,[a])}
+  return {q,a,opts:shuffle([a,...opts]),why:`${d.g} (${d.b}) is in the ${f.name} family. ${f.does}`,key:d.g}}
+function runQuiz(box,qs,title,onDone){let i=0,score=0,missed=[];
+  const draw=()=>{if(i>=qs.length)return onDone(score,qs.length,missed);const q=qs[i];
+    box.innerHTML=`<div class="muted small">${title} · Question ${i+1} of ${qs.length} · Score ${score}</div><h2 style="margin-top:6px">${q.q}</h2>
+    <div class="opts">${q.opts.map(o=>`<button>${o}</button>`).join('')}</div><p class="fb" id="fb" hidden></p><button class="primary" id="nx" hidden>${i===qs.length-1?'See my score':'Next'}</button>`;
+    box.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>{if(!$('#nx').hidden)return;const ok=b.textContent===q.a;
+      box.querySelectorAll('.opts button').forEach(x=>{if(x.textContent===q.a)x.classList.add('right')});
+      if(ok){score++;if(S.tricky[q.key]){S.tricky[q.key]--;if(S.tricky[q.key]<=0)delete S.tricky[q.key]}}else{b.classList.add('wrong');missed.push(q);S.tricky[q.key]=(S.tricky[q.key]||0)+2}
+      logDay(ok?1:0,1,0);touchDay();save();const fb=$('#fb');fb.hidden=false;fb.className='fb'+(ok?'':' no');fb.innerHTML=`<b>${ok?'Yes!':'Not this time.'}</b>${q.why}`;$('#nx').hidden=false;$('#nx').focus()});
+    $('#nx').onclick=()=>{i++;draw()}};
+  draw()}
+const missedList=m=>m.length?`<h3 style="margin-top:14px">Look at these again</h3><ul>${m.map(q=>`<li>${q.why}</li>`).join('')}</ul>`:'';
+
+/* ---------- today ---------- */
+function drawToday(){const doneN=Object.keys(S.done).length,next=F.find(f=>!S.done[f.i]),medsDone=F.filter(f=>S.done[f.i]).reduce((n,f)=>n+f.drugs.length,0),left=F.length-doneN;
+  const trick=Object.entries(S.tricky).sort((a,b)=>b[1]-a[1]).map(([g])=>D.find(d=>d.g===g)).filter(Boolean);
+  const all=Object.values(S.hist),q=all.reduce((n,h)=>n+(h.q||0),0),t=all.reduce((n,h)=>n+(h.t||0),0);
+  const days=[];for(let k=13;k>=0;k--){const d=new Date();d.setDate(d.getDate()-k);const h=S.hist[dayKey(d)]||{q:0,t:0,f:0};days.push({d,...h})}
+  const week=days.slice(7),wq=week.reduce((n,h)=>n+h.q,0),wt=week.reduce((n,h)=>n+h.t,0),studied=days.filter(h=>h.t>0).length;
+  $('#today').innerHTML=`
+  <div class="card next" id="next-family" style="--gc:var(--g${next?next.g:4})">${next?`
+    <h3>Pick up where you left off</h3>
+    <div class="row" style="margin-top:8px;gap:16px"><span class="clue">${next.clue==='—'?next.drugs.length+' meds':next.clue}</span>
+    <div><h2>${next.name}</h2><span class="tag"><span class="dot"></span>${G[next.g]} · ${next.drugs.length} medicines · about 5 minutes</span></div></div>
+    <p style="margin:12px 0">${next.does}</p>
+    <div class="row"><button class="primary" id="go">Start this family</button>${trick.length?`<button class="ghost" id="go2">Review ${trick.length} tricky ${trick.length===1?'one':'ones'}</button>`:''}</div>`:`<h2>All ${F.length} families finished.</h2><p>Keep them fresh with the review quiz.</p><button class="primary" id="go">Open the review quiz</button>`}
+  </div>
+  <div class="card" id="totals">
+    <div class="stats">
+      <div><b>${doneN} / ${F.length}</b>Families finished</div>
+      <div><b>${medsDone} / ${D.length}</b>Medicines learned</div>
+      <div><b>${S.streak||0}</b>Day streak</div>
+      <div><b>${t?Math.round(q/t*100)+'%':'—'}</b>Answers right, all time${t?` (${q} of ${t})`:''}</div>
+    </div>
+    <div class="bar" role="img" aria-label="${doneN} of ${F.length} families finished"><i style="width:${doneN/F.length*100}%"></i></div>
+    <p class="muted small" style="margin:10px 0 0">${left?`${left} families to go. At one a day you finish in ${left} days, at two a day in ${Math.ceil(left/2)}.`:'Every family is done.'}</p>
+  </div>
+  <div class="two">
+    <div class="card" id="by-group"><h2>Progress by body system</h2><p class="muted small" style="margin:4px 0 0">Families finished in each group</p>
+      <div class="gbars">${G.map((g,gi)=>{const fs=F.filter(f=>f.g===gi),dn=fs.filter(f=>S.done[f.i]).length;
+        return `<div class="gbar" style="--gc:var(--g${gi})"><span>${g}</span><span class="track" role="img" aria-label="${g}: ${dn} of ${fs.length} families"><i style="width:${dn/fs.length*100}%"></i></span><b>${dn} / ${fs.length}</b></div>`}).join('')}</div></div>
+    <div class="card" id="activity"><h2>Questions answered, last 14 days</h2>
+      <p class="muted small" style="margin:4px 0 0">${studied?`You studied on ${studied} of the last 14 days. This week: ${wt} questions${wt?`, ${Math.round(wq/wt*100)}% right`:''}.`:'Answer a quick check or review quiz and your days show up here.'}</p>
+      <div class="chart" id="actchart"></div></div>
+  </div>
+  <div class="card" id="tricky"><h2>Tricky medicines</h2>
+    ${trick.length?`<p class="muted small" style="margin:4px 0 0">Ones you missed recently, most-missed first. Get each right a couple of times and it leaves the list.</p>
+    <div class="trick">${trick.slice(0,18).map(d=>`<span style="--gc:var(--g${F[d.f].g})"><b>${d.g}</b> · ${d.b1}</span>`).join('')}</div>
+    <button class="primary" id="go3">Review the tricky ones</button>`:'<p class="muted" style="margin:6px 0 0">Nothing here yet. Medicines you miss in a quiz appear here so you can practise them.</p>'}
+  </div>
+  <div class="card" id="backup"><h2>Move your progress to another device</h2>
+    <p class="muted small" style="margin:4px 0 10px;max-width:62ch">Progress is kept in this browser. Download a backup file here, send it to your other phone or computer, then open this page there and load the file. Loading adds the backup to what is already there, so nothing is lost.</p>
+    <div class="row"><button class="primary" id="bk-save">Back up progress</button><label class="ghost" for="bk-file" style="cursor:pointer">Load a backup file</label><input type="file" id="bk-file" accept=".json,application/json" hidden></div>
+    <p class="small" id="bk-msg" role="status" style="margin:8px 0 0"></p></div>`;
+  $('#go').onclick=()=>next?openFamily(next.i):showTab('review');
+  if($('#go2'))$('#go2').onclick=()=>showTab('review');if($('#go3'))$('#go3').onclick=()=>showTab('review');
+  $('#bk-save').onclick=()=>{try{const blob=new Blob([JSON.stringify({app:'medicine-families',v:1,progress:S},null,1)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='medicine-families-progress-'+dayKey()+'.json';document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);$('#bk-msg').textContent='Backup file downloaded.'}catch(e){$('#bk-msg').textContent='This browser could not download the file.'}};
+  $('#bk-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;
+    try{const j=JSON.parse(await file.text()),p=j&&j.progress;if(!p||typeof p!=='object'||!p.done)throw 0;
+      S=merge(S,{done:p.done||{},tricky:p.tricky||{},streak:+p.streak||0,last:String(p.last||''),hist:p.hist||{},at:+p.at||0});cache();drawToday();
+      $('#bk-msg').textContent='Backup loaded. Your progress now includes it.'}
+    catch(err){$('#bk-msg').textContent='That file is not a Medicine Families backup. Choose the file you downloaded with Back up progress.'}};
+  drawActivity(days)}
+function drawActivity(days){const el=$('#actchart');if(!el)return;const w=Math.max(280,el.clientWidth||500),h=170,b=26,top=18,max=Math.max(5,...days.map(d=>d.t));
+  const bw=(w-8)/days.length,y=v=>top+(h-top-b)*(1-v/max),fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Bar chart of questions answered on each of the last 14 days">
+  <line x1="0" x2="${w}" y1="${h-b}" y2="${h-b}" style="stroke:var(--line)"/>
+  ${days.map((d,i)=>{const x=4+i*bw+bw*.15,bwid=bw*.7;return `<g data-i="${i}">
+    <rect x="${4+i*bw}" y="0" width="${bw}" height="${h}" style="fill:transparent"/>
+    ${d.t?`<rect x="${x}" y="${y(d.t)}" width="${bwid}" height="${h-b-y(d.t)}" rx="3" style="fill:var(--soft);stroke:var(--teal);stroke-width:1"/>
+    <rect x="${x}" y="${y(d.q)}" width="${bwid}" height="${h-b-y(d.q)}" rx="3" style="fill:var(--teal)"/>
+    <text class="v" x="${x+bwid/2}" y="${y(d.t)-4}" text-anchor="middle">${d.t}</text>`:''}
+    ${i%(w<420?3:2)===1||i===13?`<text x="${x+bwid/2}" y="${h-8}" text-anchor="middle">${i===13?'Today':fmt(d.d)}</text>`:''}</g>`}).join('')}
+  </svg><div class="ctip" hidden></div>
+  <p class="muted small" style="margin:4px 0 0"><span style="display:inline-block;width:10px;height:10px;background:var(--teal);border-radius:2px"></span> right &nbsp; <span style="display:inline-block;width:10px;height:10px;background:var(--soft);border:1px solid var(--teal);border-radius:2px"></span> answered</p>`;
+  const tip=el.querySelector('.ctip');
+  el.querySelectorAll('g[data-i]').forEach(g=>{g.addEventListener('pointermove',ev=>{const d=days[+g.dataset.i],r=el.getBoundingClientRect();
+    tip.hidden=false;tip.textContent=`${fmt(d.d)}: ${d.t?`${d.q} of ${d.t} right`:'no questions'}${d.f?`, ${d.f} ${d.f===1?'family':'families'} finished`:''}`;
+    tip.style.left=Math.max(0,Math.min(ev.clientX-r.left+10,r.width-200))+'px';tip.style.top=Math.max(0,ev.clientY-r.top-34)+'px'});
+    g.addEventListener('pointerleave',()=>tip.hidden=true)})}
+let rsz;window.addEventListener('resize',()=>{clearTimeout(rsz);rsz=setTimeout(()=>{if(view==='today')drawToday()},200)});
+
+/* ---------- families ---------- */
+function drawMap(){inFamily=false;$('#families').innerHTML=`<div class="card"><h2>All ${F.length} families</h2><p class="muted" style="margin:4px 0 0">Pick any family. A tick means you passed its quick check.</p>
+  ${G.map((g,gi)=>`<div class="grp" style="--gc:var(--g${gi})"><h2><span class="dot"></span>${g}</h2><div class="tiles">${F.filter(f=>f.g===gi).map(f=>`<button class="tile${S.done[f.i]?' done':''}" data-f="${f.i}"><b>${f.clue==='—'?f.name:f.clue}</b><span>${f.clue==='—'?f.drugs.length+' medicines':f.name}</span></button>`).join('')}</div></div>`).join('')}</div>`;
+  $('#families').querySelectorAll('.tile').forEach(b=>b.onclick=()=>openFamily(+b.dataset.f))}
+function openFamily(i){const f=F[i];showTab('families',true);inFamily=true;
+  $('#families').innerHTML=`<div class="stack" style="--gc:var(--g${f.g})">
+  <div class="card next">
+    <div class="row" style="justify-content:space-between"><span class="tag"><span class="dot"></span>${G[f.g]}</span><button class="ghost" id="back">All families</button></div>
+    <h3 style="margin-top:10px">Step 1 · Meet the family</h3>
+    <div class="row" style="margin-top:6px;gap:16px"><span class="clue">${f.clue==='—'?'':f.clue}</span><h2>${f.name}</h2></div>
+    <div class="say3"><p><b>What it does.</b> ${f.does}</p><p class="hook"><b>Picture it.</b> ${f.hook}</p>${f.watch?`<p><b>Remember.</b> ${f.watch}</p>`:''}</div>
+    <button class="ghost" id="read" style="margin-top:12px">Read it to me</button>
+  </div>
+  <div class="card"><h3>Step 2 · Flip the cards</h3><p class="muted small" style="margin:4px 0 0">Say the generic name before you flip. The name clue is highlighted on the back.</p>
+    <div class="cards">${f.drugs.map((d,k)=>`<div class="fc"><button class="flip" data-k="${k}" aria-label="${d.b}. Flip for the generic name"><span class="f"><small>Brand</small><b>${d.b}</b></span><span class="b"><small>Generic</small><b>${hl(d.g,f.clue)}</b></span></button><button class="say" data-k="${k}">Hear both names</button></div>`).join('')}</div></div>
+  <div class="card" id="check"><h3>Step 3 · Quick check</h3><p style="margin:6px 0 12px">${f.drugs.length+1} short questions. Get at least 8 out of every 10 right to earn the tick.</p><button class="primary" id="startcheck">Start the quick check</button></div></div>`;
+  $('#back').onclick=()=>drawMap();
+  $('#read').onclick=e=>speak(`${f.name}. ${f.does} ${f.hook} The medicines are: ${f.drugs.map(d=>d.g).join(', ')}.`,e.target);
+  $('#families').querySelectorAll('.flip').forEach(b=>b.onclick=()=>{b.classList.toggle('on');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')});
+  $('#families').querySelectorAll('.say').forEach(b=>b.onclick=()=>{const d=f.drugs[+b.dataset.k];speak(`${d.b1}. Generic name: ${d.g}.`,b)});
+  const start=()=>{const types=['b2g','fam','g2b'];const qs=shuffle(f.drugs.map((d,k)=>makeQ(d,types[k%3])).concat([makeQ(f.drugs[0],'does')]));
+    runQuiz($('#check'),qs,f.name,(score,total,missed)=>{touchDay();const pass=score/total>=.8;if(pass){if(!S.done[f.i])logDay(0,0,1);S.done[f.i]=true;save()}
+      const nx=F.find(x=>!S.done[x.i]);
+      $('#check').innerHTML=`<h2>${score} of ${total}${pass?'. Family finished!':''}</h2><p>${pass?'This family now has its tick.':'Flip the cards once more, then try again.'}</p>${missedList(missed)}
+      <div class="row">${pass&&nx?'<button class="primary" id="nextfam">Next family</button>':''}<button class="${pass?'ghost':'primary'}" id="again">Try the check again</button><button class="ghost" id="back2">All families</button></div>`;
+      if($('#nextfam'))$('#nextfam').onclick=()=>openFamily(nx.i);$('#again').onclick=start;$('#back2').onclick=()=>drawMap();drawToday()})};
+  $('#startcheck').onclick=start;window.scrollTo(0,0)}
+
+/* ---------- review ---------- */
+function drawReview(){const done=F.filter(f=>S.done[f.i]),pool=(done.length?done:F).flatMap(f=>f.drugs),tricky=pool.filter(d=>S.tricky[d.g]);
+  $('#reviewbox').innerHTML=`<h2>Review quiz</h2><p style="max-width:60ch">${done.length?`Ten mixed questions from the ${done.length} ${done.length===1?'family':'families'} you have finished.`:'You have not finished a family yet, so this quiz draws from all of them.'} ${tricky.length?`It starts with ${Math.min(tricky.length,5)} you missed before.`:''}</p><button class="primary" id="rstart">Start 10 questions</button>`;
+  $('#rstart').onclick=()=>{const first=shuffle(tricky).slice(0,5),rest=pick(pool,10-first.length,first),types=['b2g','g2b','fam','does'];
+    const qs=first.concat(rest).map((d,k)=>makeQ(d,types[k%4]));
+    runQuiz($('#reviewbox'),qs,'Review',(score,total,missed)=>{touchDay();
+      $('#reviewbox').innerHTML=`<h2>You scored ${score} of ${total}</h2>${missed.length?'<p>The ones you missed will come back first next time.</p>':'<p>Every answer right.</p>'}${missedList(missed)}<button class="primary" id="ragain">Go again</button>`;
+      $('#ragain').onclick=drawReview;drawToday()})}}
+
+/* ---------- full list ---------- */
+function drawList(){const t=$('#search').value.trim().toLowerCase();
+  $('#rows').innerHTML=F.map(f=>f.drugs.filter(d=>!t||(d.g+' '+d.b+' '+f.name+' '+f.clue+' '+G[f.g]).toLowerCase().includes(t)).map((d,k)=>`<tr><td class="fam" style="--gc:var(--g${f.g})">${k===0||t?f.name:''}</td><td>${k===0||t?(f.clue==='—'?'':f.clue):''}</td><td>${hl(d.g,f.clue)}</td><td>${d.b}</td><td class="muted">${k===0||t?f.does:''}</td></tr>`).join('')).join('')||'<tr><td colspan="5">No medicine matches that search.</td></tr>'}
+$('#search').addEventListener('input',drawList);
+
+/* ---------- tabs ---------- */
+function showTab(id,keep){view=id;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id));
+  ['today','families','review','list'].forEach(s=>$('#'+s).hidden=s!==id);try{speechSynthesis.cancel()}catch(e){}
+  if(id==='today')drawToday();if(id==='families'&&!keep)drawMap();if(id==='review')drawReview();if(id==='list')drawList()}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+showTab('today');
+</script>
+</body>
+</html>
